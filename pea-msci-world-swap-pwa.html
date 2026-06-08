@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PEA MSCI World Swap Tracker PWA</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@500,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem;
+      --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+      --radius-sm: 0.375rem; --radius-md: 0.5rem; --radius-lg: 0.75rem; --radius-xl: 1rem; --radius-full: 9999px;
+      --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      --color-bg: #f7f6f2; --color-surface: #f9f8f5; --color-surface-2: #fbfbf9; --color-surface-offset: #f3f0ec;
+      --color-surface-dynamic: #e6e4df; --color-divider: #dcd9d5; --color-border: #d4d1ca;
+      --color-text: #28251d; --color-text-muted: #7a7974; --color-text-faint: #bab9b4; --color-text-inverse: #f9f8f4;
+      --color-primary: #01696f; --color-primary-hover: #0c4e54; --color-primary-active: #0f3638; --color-primary-highlight: #cedcd8;
+      --color-success: #437a22; --color-success-highlight: #d4dfcc; --color-error: #a13544; --color-error-highlight: #dececb;
+      --shadow-sm: 0 1px 2px oklch(0.2 0.01 80 / 0.06); --shadow-md: 0 4px 12px oklch(0.2 0.01 80 / 0.08); --shadow-lg: 0 12px 32px oklch(0.2 0.01 80 / 0.12);
+      --content-wide: 1200px;
+      --font-display: 'Cabinet Grotesk', 'Inter', sans-serif;
+      --font-body: 'Satoshi', 'Inter', sans-serif;
+    }
+    [data-theme="dark"] {
+      --color-bg: #171614; --color-surface: #1c1b19; --color-surface-2: #201f1d; --color-surface-offset: #1d1c1a;
+      --color-surface-dynamic: #2d2c2a; --color-divider: #262523; --color-border: #393836;
+      --color-text: #cdccca; --color-text-muted: #9a9894; --color-text-faint: #6f6d69; --color-text-inverse: #2b2a28;
+      --color-primary: #4f98a3; --color-primary-hover: #227f8b; --color-primary-active: #1a626b; --color-primary-highlight: #313b3b;
+      --color-success: #6daa45; --color-success-highlight: #3a4435; --color-error: #dd6974; --color-error-highlight: #574848;
+      --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.2); --shadow-md: 0 4px 12px oklch(0 0 0 / 0.3); --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.4);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme]) {
+        --color-bg: #171614; --color-surface: #1c1b19; --color-surface-2: #201f1d; --color-surface-offset: #1d1c1a;
+        --color-surface-dynamic: #2d2c2a; --color-divider: #262523; --color-border: #393836;
+        --color-text: #cdccca; --color-text-muted: #9a9894; --color-text-faint: #6f6d69; --color-text-inverse: #2b2a28;
+        --color-primary: #4f98a3; --color-primary-hover: #227f8b; --color-primary-active: #1a626b; --color-primary-highlight: #313b3b;
+        --color-success: #6daa45; --color-success-highlight: #3a4435; --color-error: #dd6974; --color-error-highlight: #574848;
+      }
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{-moz-text-size-adjust:none;-webkit-text-size-adjust:none;text-size-adjust:none;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;scroll-behavior:smooth;scroll-padding-top:var(--space-16)}
+    body{min-height:100dvh;line-height:1.6;font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:
+      radial-gradient(circle at top left, color-mix(in oklab, var(--color-primary) 6%, transparent), transparent 30%),
+      var(--color-bg)}
+    img,picture,video,canvas,svg{display:block;max-width:100%;height:auto}
+    input,button,textarea,select{font:inherit;color:inherit}
+    button{cursor:pointer;background:none;border:none}
+    a,button,input,select{transition:color var(--transition-interactive),background var(--transition-interactive),border-color var(--transition-interactive),box-shadow var(--transition-interactive),transform var(--transition-interactive)}
+    :focus-visible{outline:2px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
+    ::selection{background:color-mix(in oklab,var(--color-primary) 22%,transparent)}
+    @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}
+
+    .skip-link{position:absolute;left:var(--space-4);top:-100px;background:var(--color-primary);color:var(--color-text-inverse);padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);z-index:50}
+    .skip-link:focus{top:var(--space-4)}
+    .shell{max-width:var(--content-wide);margin:0 auto;padding:var(--space-4)}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding-block:var(--space-4) var(--space-8)}
+    .brand{display:flex;align-items:center;gap:var(--space-3)}
+    .brand-mark{width:42px;height:42px;padding:9px;border-radius:var(--radius-lg);background:linear-gradient(180deg,color-mix(in oklab,var(--color-primary) 14%,var(--color-surface)),var(--color-surface));border:1px solid color-mix(in oklab,var(--color-text) 10%,transparent);box-shadow:var(--shadow-sm)}
+    .brand-copy h1{font-family:var(--font-display);font-size:var(--text-xl);line-height:1.05;letter-spacing:-0.03em}
+    .brand-copy p{color:var(--color-text-muted);font-size:var(--text-sm);max-width:48ch}
+    .actions{display:flex;gap:var(--space-2);flex-wrap:wrap;justify-content:flex-end}
+    .btn{min-height:44px;padding:0 var(--space-4);border-radius:var(--radius-full);display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);border:1px solid color-mix(in oklab,var(--color-text) 12%,transparent);background:var(--color-surface);box-shadow:var(--shadow-sm)}
+    .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-md)}
+    .btn-primary{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-text-inverse)}
+    .btn-primary:hover{background:var(--color-primary-hover);border-color:var(--color-primary-hover)}
+    .hero{display:grid;grid-template-columns:1.25fr 0.95fr;gap:var(--space-4);margin-bottom:var(--space-6)}
+    .panel{background:linear-gradient(180deg,var(--color-surface),var(--color-surface-2));border:1px solid color-mix(in oklab,var(--color-text) 10%,transparent);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm)}
+    .hero-card{padding:var(--space-6)}
+    .eyebrow{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-full);background:color-mix(in oklab,var(--color-primary) 10%,var(--color-surface));color:var(--color-primary);font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.08em}
+    .hero-card h2{font-family:var(--font-display);font-size:var(--text-xl);margin-top:var(--space-4);letter-spacing:-0.03em;max-width:18ch}
+    .hero-card p{margin-top:var(--space-3);color:var(--color-text-muted);max-width:58ch}
+    .hero-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3);margin-top:var(--space-6)}
+    .hero-stat{padding:var(--space-4);border-radius:var(--radius-lg);background:var(--color-surface-offset);border:1px solid color-mix(in oklab,var(--color-text) 8%,transparent)}
+    .hero-stat span{display:block;font-size:var(--text-xs);text-transform:uppercase;letter-spacing:0.08em;color:var(--color-text-muted);font-weight:700}
+    .hero-stat strong{display:block;font-size:var(--text-lg);margin-top:var(--space-2)}
+    .note-card{padding:var(--space-6);display:flex;flex-direction:column;justify-content:space-between;gap:var(--space-6)}
+    .note-card h3{font-size:var(--text-lg);font-family:var(--font-display);letter-spacing:-0.02em}
+    .checklist{list-style:none;display:grid;gap:var(--space-3)}
+    .checklist li{display:flex;gap:var(--space-3);align-items:flex-start;color:var(--color-text-muted)}
+    .dot{width:10px;height:10px;border-radius:var(--radius-full);margin-top:0.55rem;background:var(--color-primary);flex:0 0 auto}
+
+    .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-4);margin-block:var(--space-6)}
+    .metric{padding:var(--space-5);content-visibility:auto}
+    .metric .label{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:0.08em;color:var(--color-text-muted);font-weight:700}
+    .metric .value{font-size:var(--text-lg);font-weight:700;margin-top:var(--space-2)}
+    .metric .sub{font-size:var(--text-sm);color:var(--color-text-muted);margin-top:var(--space-2)}
+    .metric.positive .value{color:var(--color-success)}
+    .metric.negative .value{color:var(--color-error)}
+
+    .layout{display:grid;grid-template-columns:1.25fr 0.95fr;gap:var(--space-4);align-items:start}
+    .stack{display:grid;gap:var(--space-4)}
+    .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4);margin-bottom:var(--space-4)}
+    .card-head h3{font-size:var(--text-lg);font-family:var(--font-display);letter-spacing:-0.02em}
+    .card-head p{font-size:var(--text-sm);color:var(--color-text-muted);max-width:42ch}
+    .card-body{padding:var(--space-5)}
+    .chart-wrap{height:340px}
+    .forms{display:grid;grid-template-columns:1fr;gap:var(--space-4)}
+    .form-card{padding:var(--space-5)}
+    form{display:grid;gap:var(--space-4)}
+    .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
+    .field{display:grid;gap:var(--space-2)}
+    label{font-size:var(--text-sm);font-weight:700}
+    input,select{width:100%;min-height:44px;border-radius:var(--radius-md);border:1px solid color-mix(in oklab,var(--color-text) 12%,transparent);background:var(--color-surface-offset);padding:0 var(--space-3)}
+    input::placeholder{color:var(--color-text-faint)}
+    .inline-actions{display:flex;gap:var(--space-2);flex-wrap:wrap}
+    .hint{font-size:var(--text-xs);color:var(--color-text-muted)}
+
+    table{width:100%;border-collapse:collapse}
+    th,td{text-align:left;padding:var(--space-3) var(--space-2);border-top:1px solid var(--color-divider);vertical-align:middle}
+    th{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:0.08em;color:var(--color-text-muted)}
+    tbody tr:hover{background:color-mix(in oklab,var(--color-primary) 4%,transparent)}
+    .num{text-align:right;font-variant-numeric:tabular-nums}
+    .chip{display:inline-flex;align-items:center;gap:var(--space-2);padding:0.4rem 0.75rem;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:700}
+    .chip.pos{background:var(--color-success-highlight);color:var(--color-success)}
+    .chip.neg{background:var(--color-error-highlight);color:var(--color-error)}
+    .chip.neu{background:var(--color-primary-highlight);color:var(--color-primary)}
+    .table-wrap{overflow:auto}
+    .empty{padding:var(--space-6);border:1px dashed color-mix(in oklab,var(--color-text) 16%,transparent);border-radius:var(--radius-lg);color:var(--color-text-muted);text-align:center}
+    .footer-note{padding:var(--space-4);font-size:var(--text-sm);color:var(--color-text-muted)}
+    .fade-in{opacity:1}
+    @supports (animation-timeline: view()) {
+      .fade-in{opacity:0;animation:reveal-fade linear both;animation-timeline:view();animation-range:entry 0% entry 75%}
+      @keyframes reveal-fade{to{opacity:1}}
+    }
+    @media (max-width: 980px){
+      .hero,.layout,.metrics{grid-template-columns:1fr}
+      .hero-grid,.field-grid{grid-template-columns:1fr}
+      .topbar{align-items:flex-start;flex-direction:column}
+      .actions{justify-content:flex-start}
+    }
+  </style>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#01696f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="PEA Tracker">
+  <link rel="apple-touch-icon" href="./assets/icon-192.png">
+</head>
+<body>
+  <a class="skip-link" href="#main">Aller au contenu</a>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="Logo du tracker PEA">
+            <path d="M10 31.5V14l14-4 14 4v17.5L24 38 10 31.5Z"></path>
+            <path d="M17 25.5l5-5 4 4 6-7"></path>
+          </svg>
+        </div>
+        <div class="brand-copy">
+          <h1>PEA MSCI World Swap</h1>
+          <p>Dashboard simple préchargé avec tes versements réels, ton snapshot au 08/06/2026 et la performance globale de ta ligne suivie.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="themeToggle" type="button" aria-label="Basculer le thème">
+          <span id="themeIcon">◐</span>
+          <span>Thème</span>
+        </button>
+        <button class="btn" id="resetDemo" type="button">Recharger tes données</button>
+        <button class="btn" id="importBtn" type="button">Importer JSON</button>
+        <button class="btn btn-primary" id="exportBtn" type="button">Exporter JSON</button>
+        <input id="importFile" type="file" accept="application/json" hidden>
+        <a class="btn" href="#installation">Installer</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero fade-in">
+        <article class="panel hero-card">
+          <span class="eyebrow">Suivi manuel et clair</span>
+          <h2>Tu suis l'investi, la valeur actuelle et la perf réelle en deux saisies.</h2>
+          <p>Ajoute tes versements au fil du temps, saisis des snapshots de valeur de portefeuille, puis laisse le tableau de bord calculer la plus-value latente, le rendement et l'écart entre capital investi et valorisation.</p>
+          <div class="hero-grid">
+            <div class="hero-stat">
+              <span>Actif suivi</span>
+              <strong>MSCI World Swap</strong>
+            </div>
+            <div class="hero-stat">
+              <span>Enveloppe</span>
+              <strong>PEA</strong>
+            </div>
+            <div class="hero-stat">
+              <span>Mode</span>
+              <strong>100% local</strong>
+            </div>
+            <div class="hero-stat">
+              <span>Sauvegarde</span>
+              <strong>Import / export JSON</strong>
+            </div>
+          </div>
+        </article>
+        <aside class="panel note-card">
+          <div>
+            <h3>Ce que l'appli calcule</h3>
+            <ul class="checklist">
+              <li><span class="dot"></span><span>Total versé et ticket moyen.</span></li>
+              <li><span class="dot"></span><span>Dernière valeur de portefeuille et plus-value latente.</span></li>
+              <li><span class="dot"></span><span>Rendement global et rythme d'investissement mensuel.</span></li>
+              <li><span class="dot"></span><span>Courbe comparant investi cumulé et snapshots de valeur.</span></li>
+            </ul>
+          </div>
+          <div class="footer-note">Tes données fournies sont déjà chargées. Tu peux ensuite les modifier, les compléter et réexporter le JSON.</div>
+        </aside>
+      </section>
+
+      <section class="metrics fade-in" aria-label="Indicateurs clés">
+        <article class="panel metric"><div class="label">Total investi</div><div class="value" id="metricInvested">0 €</div><div class="sub" id="metricContribCount">0 versement</div></article>
+        <article class="panel metric"><div class="label">Valeur actuelle</div><div class="value" id="metricCurrent">0 €</div><div class="sub" id="metricSnapshotDate">Aucun snapshot</div></article>
+        <article class="panel metric" id="gainMetric"><div class="label">Plus-value latente</div><div class="value" id="metricGain">0 €</div><div class="sub" id="metricGainPct">0 %</div></article>
+        <article class="panel metric"><div class="label">Versement mensuel moyen</div><div class="value" id="metricMonthlyAvg">0 €</div><div class="sub" id="metricProjection">Projection neutre</div></article>
+      </section>
+
+      <section class="layout fade-in">
+        <div class="stack">
+          <article class="panel card-body">
+            <div class="card-head">
+              <div>
+                <h3>Évolution du portefeuille</h3>
+                <p>La courbe compare le capital investi cumulé avec tes snapshots de valeur, affiche les points isolés et ajoute une projection simple basée sur ton rythme moyen de versement.</p>
+              </div>
+              <span class="chip neu" id="statusChip">Suivi prêt</span>
+            </div>
+            <div class="chart-wrap"><canvas id="portfolioChart" aria-label="Graphique du portefeuille" role="img"></canvas></div>
+          </article>
+
+          <article class="panel card-body">
+            <div class="card-head">
+              <div>
+                <h3>Historique des versements</h3>
+                <p>Enregistre chaque achat ou apport sur ton ETF MSCI World Swap.</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Date</th><th>Libellé</th><th class="num">Montant</th><th>Action</th></tr>
+                </thead>
+                <tbody id="contribTable"></tbody>
+              </table>
+            </div>
+            <div id="emptyContrib" class="empty" hidden>Aucun versement pour le moment.</div>
+          </article>
+
+          <article class="panel card-body">
+            <div class="card-head">
+              <div>
+                <h3>Snapshots de valeur</h3>
+                <p>Saisis la valeur totale de ton PEA à une date donnée pour mesurer la progression réelle.</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Date</th><th class="num">Valeur</th><th class="num">Écart vs investi</th><th>Action</th></tr>
+                </thead>
+                <tbody id="snapTable"></tbody>
+              </table>
+            </div>
+            <div id="emptySnap" class="empty" hidden>Aucun snapshot pour le moment.</div>
+          </article>
+        </div>
+
+        <aside class="stack forms">
+          <article class="panel form-card">
+            <div class="card-head">
+              <div>
+                <h3>Ajouter un versement</h3>
+                <p>Une ligne = un apport investi.</p>
+              </div>
+            </div>
+            <form id="contribForm">
+              <div class="field-grid">
+                <div class="field">
+                  <label for="contribDate">Date</label>
+                  <input id="contribDate" name="date" type="date" required>
+                </div>
+                <div class="field">
+                  <label for="contribAmount">Montant (€)</label>
+                  <input id="contribAmount" name="amount" type="number" min="0" step="0.01" placeholder="250" required>
+                </div>
+              </div>
+              <div class="field">
+                <label for="contribLabel">Libellé</label>
+                <input id="contribLabel" name="label" type="text" maxlength="60" placeholder="Versement mensuel ETF WPEA / CW8 / autre">
+              </div>
+              <div class="inline-actions">
+                <button class="btn btn-primary" type="submit">Ajouter</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="panel form-card">
+            <div class="card-head">
+              <div>
+                <h3>Ajouter un snapshot</h3>
+                <p>Exemple : valeur de portefeuille affichée par ton courtier.</p>
+              </div>
+            </div>
+            <form id="snapForm">
+              <div class="field-grid">
+                <div class="field">
+                  <label for="snapDate">Date</label>
+                  <input id="snapDate" name="date" type="date" required>
+                </div>
+                <div class="field">
+                  <label for="snapValue">Valeur (€)</label>
+                  <input id="snapValue" name="value" type="number" min="0" step="0.01" placeholder="5120" required>
+                </div>
+              </div>
+              <div class="inline-actions">
+                <button class="btn btn-primary" type="submit">Ajouter</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="panel form-card">
+            <div class="card-head">
+              <div>
+                <h3>Lecture rapide</h3>
+                <p>Quelques repères générés automatiquement à partir de tes données.</p>
+              </div>
+            </div>
+            <div class="stack">
+              <div class="hero-stat">
+                <span>Point mort</span>
+                <strong id="breakevenValue">0 €</strong>
+              </div>
+              <div class="hero-stat">
+                <span>Dernier écart</span>
+                <strong id="lastGap">0 €</strong>
+              </div>
+              <div class="hero-stat">
+                <span>Ticket moyen</span>
+                <strong id="averageContribution">0 €</strong>
+              </div>
+              <p class="hint">Les calculs sont indicatifs et ne remplacent pas le reporting fiscal ou courtier.</p>
+            </div>
+          </article>
+        </aside>
+      </section>
+          <section id="installation" class="panel card-body fade-in" style="margin-top: var(--space-6);">
+        <div class="card-head">
+          <div>
+            <h3>Installation mobile</h3>
+            <p>Sur iPhone, ouvre l’URL dans Safari puis utilise “Sur l’écran d’accueil”. Sur Android, ouvre dans Chrome puis utilise “Ajouter à l’écran d’accueil”.</p>
+          </div>
+        </div>
+        <p class="hint">Une fois installée, l’appli s’ouvre comme une vraie app en plein écran et reste disponible hors ligne après le premier chargement.</p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const euro = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+    const percent = new Intl.NumberFormat('fr-FR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const shortDate = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const sampleData = {
+      "contributions": [
+            {
+                  "id": "9ae9b362-3072-425e-a7cf-5c6289570417",
+                  "date": "2026-03-25",
+                  "amount": 272.67,
+                  "label": "MSCI WORLD SWAP mensuel"
+            },
+            {
+                  "id": "87b4143a-617f-4c44-924d-ca05ee05860e",
+                  "date": "2026-04-02",
+                  "amount": 198.17,
+                  "label": "MSCI WORLD SWAP"
+            },
+            {
+                  "id": "871bb7c2-a379-439f-998c-d65a9d32a362",
+                  "date": "2026-05-04",
+                  "amount": 194.25,
+                  "label": "MSCI WORLD SWAP"
+            },
+            {
+                  "id": "958bac79-b318-46d4-95a2-6dc04f69dd34",
+                  "date": "2026-06-02",
+                  "amount": 197.2,
+                  "label": "MSCI WORLD SWAP"
+            }
+      ],
+      "snapshots": [
+            {
+                  "id": "d03f2afe-cb7e-4736-a3aa-a8e43e44e36a",
+                  "date": "2026-06-08",
+                  "value": 918.31
+            }
+      ]
+};
+
+    let state = structuredClone(sampleData);
+    let chart;
+    const root = document.documentElement;
+
+    const ids = {
+      metricInvested: document.getElementById('metricInvested'),
+      metricContribCount: document.getElementById('metricContribCount'),
+      metricCurrent: document.getElementById('metricCurrent'),
+      metricSnapshotDate: document.getElementById('metricSnapshotDate'),
+      metricGain: document.getElementById('metricGain'),
+      metricGainPct: document.getElementById('metricGainPct'),
+      metricMonthlyAvg: document.getElementById('metricMonthlyAvg'),
+      metricProjection: document.getElementById('metricProjection'),
+      gainMetric: document.getElementById('gainMetric'),
+      statusChip: document.getElementById('statusChip'),
+      breakevenValue: document.getElementById('breakevenValue'),
+      lastGap: document.getElementById('lastGap'),
+      averageContribution: document.getElementById('averageContribution'),
+      contribTable: document.getElementById('contribTable'),
+      snapTable: document.getElementById('snapTable'),
+      emptyContrib: document.getElementById('emptyContrib'),
+      emptySnap: document.getElementById('emptySnap')
+    };
+
+    function sortByDate(list) {
+      return [...list].sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+
+    function investedUntil(dateStr) {
+      const target = new Date(dateStr);
+      return state.contributions.reduce((sum, item) => sum + (new Date(item.date) <= target ? Number(item.amount) : 0), 0);
+    }
+
+    function monthsBetween(start, end) {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      return Math.max(1, (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth()) + 1);
+    }
+
+    function getMetrics() {
+      const contributions = sortByDate(state.contributions);
+      const snapshots = sortByDate(state.snapshots);
+      const invested = contributions.reduce((sum, item) => sum + Number(item.amount), 0);
+      const latestSnapshot = snapshots.at(-1) || null;
+      const currentValue = latestSnapshot ? Number(latestSnapshot.value) : 0;
+      const gain = currentValue - invested;
+      const gainPct = invested > 0 ? gain / invested : 0;
+      const averageContribution = contributions.length ? invested / contributions.length : 0;
+      const monthlyAverage = contributions.length ? invested / monthsBetween(contributions[0].date, contributions.at(-1).date) : 0;
+      return { contributions, snapshots, invested, latestSnapshot, currentValue, gain, gainPct, averageContribution, monthlyAverage };
+    }
+
+    function formatDate(value) {
+      if (!value) return '—';
+      return shortDate.format(new Date(value));
+    }
+
+    function removeItem(collection, id) {
+      state[collection] = state[collection].filter(item => item.id !== id);
+      render();
+    }
+
+    function renderTables(metrics) {
+      ids.contribTable.innerHTML = '';
+      ids.snapTable.innerHTML = '';
+
+      ids.emptyContrib.hidden = metrics.contributions.length !== 0;
+      ids.emptySnap.hidden = metrics.snapshots.length !== 0;
+
+      metrics.contributions.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${formatDate(item.date)}</td><td>${item.label || 'Versement'}</td><td class="num">${euro.format(item.amount)}</td><td><button class="btn" type="button" aria-label="Supprimer le versement du ${formatDate(item.date)}">Supprimer</button></td>`;
+        tr.querySelector('button').addEventListener('click', () => removeItem('contributions', item.id));
+        ids.contribTable.appendChild(tr);
+      });
+
+      metrics.snapshots.forEach(item => {
+        const gap = Number(item.value) - investedUntil(item.date);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${formatDate(item.date)}</td><td class="num">${euro.format(item.value)}</td><td class="num">${euro.format(gap)}</td><td><button class="btn" type="button" aria-label="Supprimer le snapshot du ${formatDate(item.date)}">Supprimer</button></td>`;
+        tr.querySelector('button').addEventListener('click', () => removeItem('snapshots', item.id));
+        ids.snapTable.appendChild(tr);
+      });
+    }
+
+    function buildSeries(metrics) {
+      const dates = Array.from(new Set([
+        ...metrics.contributions.map(item => item.date),
+        ...metrics.snapshots.map(item => item.date)
+      ])).sort((a, b) => new Date(a) - new Date(b));
+
+      const projected = [];
+      const projectedLabels = [...dates.map(formatDate)];
+      const monthlyRate = metrics.monthlyAverage;
+      let latestValue = metrics.latestSnapshot ? Number(metrics.latestSnapshot.value) : null;
+      let latestDate = metrics.latestSnapshot ? new Date(metrics.latestSnapshot.date) : null;
+      const valueSeries = dates.map(date => {
+        const sameOrBefore = metrics.snapshots.filter(item => new Date(item.date) <= new Date(date));
+        return sameOrBefore.length ? Number(sameOrBefore.at(-1).value) : null;
+      });
+      if (latestValue !== null && latestDate && monthlyRate > 0) {
+        let running = latestValue;
+        for (let i = 1; i <= 3; i++) {
+          const next = new Date(latestDate);
+          next.setMonth(next.getMonth() + i);
+          running += monthlyRate;
+          dates.push(next.toISOString().slice(0, 10));
+          projectedLabels.push(formatDate(next.toISOString().slice(0, 10)));
+          projected.push(running);
+        }
+      }
+      return {
+        labels: projectedLabels,
+        invested: dates.map(date => investedUntil(date)),
+        value: [...valueSeries, ...Array(projected.length).fill(null)],
+        projection: [...Array(valueSeries.length).fill(null), ...projected]
+      };
+    }
+
+    function currentThemeColors() {
+      const styles = getComputedStyle(document.documentElement);
+      return {
+        text: styles.getPropertyValue('--color-text').trim(),
+        muted: styles.getPropertyValue('--color-text-muted').trim(),
+        divider: styles.getPropertyValue('--color-divider').trim(),
+        primary: styles.getPropertyValue('--color-primary').trim(),
+        success: styles.getPropertyValue('--color-success').trim(),
+        surface: styles.getPropertyValue('--color-surface').trim(),
+      };
+    }
+
+    function renderChart(metrics) {
+      const { labels, invested, value, projection } = buildSeries(metrics);
+      const colors = currentThemeColors();
+      const ctx = document.getElementById('portfolioChart');
+
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Investi cumulé',
+              data: invested,
+              borderColor: colors.muted,
+              backgroundColor: colors.muted,
+              borderWidth: 2,
+              pointRadius: 2,
+              tension: 0.28
+            },
+            {
+              label: 'Valeur portefeuille',
+              data: value,
+              borderColor: colors.primary,
+              backgroundColor: colors.primary,
+              borderWidth: 3,
+              pointRadius: 6,
+              pointHoverRadius: 7,
+              showLine: true,
+              spanGaps: true,
+              tension: 0.28
+            },
+            {
+              label: 'Projection simple',
+              data: projection,
+              borderColor: colors.success,
+              backgroundColor: colors.success,
+              borderWidth: 2,
+              borderDash: [7, 6],
+              pointRadius: 4,
+              pointHoverRadius: 5,
+              spanGaps: true,
+              tension: 0.2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: colors.text, usePointStyle: true, boxWidth: 10 } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label} : ${euro.format(ctx.raw ?? 0)}`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: colors.muted }, grid: { color: colors.divider } },
+            y: {
+              ticks: { color: colors.muted, callback: (value) => euro.format(value) },
+              grid: { color: colors.divider }
+            }
+          }
+        }
+      });
+    }
+
+    function renderMetrics(metrics) {
+      ids.metricInvested.textContent = euro.format(metrics.invested);
+      ids.metricContribCount.textContent = `${metrics.contributions.length} versement${metrics.contributions.length > 1 ? 's' : ''}`;
+      ids.metricCurrent.textContent = euro.format(metrics.currentValue);
+      ids.metricSnapshotDate.textContent = metrics.latestSnapshot ? `Snapshot du ${formatDate(metrics.latestSnapshot.date)}` : 'Aucun snapshot';
+      ids.metricGain.textContent = euro.format(metrics.gain);
+      ids.metricGainPct.textContent = metrics.invested ? percent.format(metrics.gainPct) : '0 %';
+      ids.metricMonthlyAvg.textContent = euro.format(metrics.monthlyAverage);
+      ids.metricProjection.textContent = metrics.monthlyAverage ? `Rythme estimé : ${euro.format(metrics.monthlyAverage)} / mois` : 'Ajoute des versements pour lancer le suivi';
+      ids.breakevenValue.textContent = euro.format(metrics.invested);
+      ids.lastGap.textContent = euro.format(metrics.gain);
+      ids.averageContribution.textContent = euro.format(metrics.averageContribution);
+
+      ids.gainMetric.classList.remove('positive', 'negative');
+      ids.statusChip.className = 'chip neu';
+      if (metrics.gain > 0) {
+        ids.gainMetric.classList.add('positive');
+        ids.statusChip.className = 'chip pos';
+        ids.statusChip.textContent = 'En plus-value';
+      } else if (metrics.gain < 0) {
+        ids.gainMetric.classList.add('negative');
+        ids.statusChip.className = 'chip neg';
+        ids.statusChip.textContent = 'En moins-value';
+      } else {
+        ids.statusChip.textContent = 'À l’équilibre';
+      }
+    }
+
+    function render() {
+      const metrics = getMetrics();
+      renderMetrics(metrics);
+      renderTables(metrics);
+      renderChart(metrics);
+    }
+
+    document.getElementById('contribForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      state.contributions.push({
+        id: crypto.randomUUID(),
+        date: form.get('date'),
+        amount: Number(form.get('amount')),
+        label: String(form.get('label') || '').trim()
+      });
+      event.currentTarget.reset();
+      document.getElementById('contribDate').valueAsDate = new Date();
+      render();
+    });
+
+    document.getElementById('snapForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      state.snapshots.push({
+        id: crypto.randomUUID(),
+        date: form.get('date'),
+        value: Number(form.get('value'))
+      });
+      event.currentTarget.reset();
+      document.getElementById('snapDate').valueAsDate = new Date();
+      render();
+    });
+
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pea-msci-world-swap-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    const importFile = document.getElementById('importFile');
+    document.getElementById('importBtn').addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', async (event) => {
+      const [file] = event.target.files;
+      if (!file) return;
+      try {
+        const content = await file.text();
+        const parsed = JSON.parse(content);
+        state = {
+          contributions: Array.isArray(parsed.contributions) ? parsed.contributions.map(item => ({ ...item, id: item.id || crypto.randomUUID() })) : [],
+          snapshots: Array.isArray(parsed.snapshots) ? parsed.snapshots.map(item => ({ ...item, id: item.id || crypto.randomUUID() })) : []
+        };
+        render();
+      } catch {
+        alert('Fichier JSON invalide.');
+      }
+      event.target.value = '';
+    });
+
+    document.getElementById('resetDemo').addEventListener('click', () => {
+      state = structuredClone(sampleData);
+      render();
+    });
+
+    let currentTheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    function syncThemeIcon() {
+      document.getElementById('themeIcon').textContent = currentTheme === 'dark' ? '☀' : '◐';
+      document.getElementById('themeToggle').setAttribute('aria-label', currentTheme === 'dark' ? 'Passer au thème clair' : 'Passer au thème sombre');
+    }
+    root.setAttribute('data-theme', currentTheme);
+    syncThemeIcon();
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', currentTheme);
+      syncThemeIcon();
+      render();
+    });
+
+    document.getElementById('contribDate').valueAsDate = new Date();
+    document.getElementById('snapDate').valueAsDate = new Date();
+    render();
+  </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
